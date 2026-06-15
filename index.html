@@ -3,28 +3,52 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PIV SKU Lookup</title>
+  <title>PIV SKU Lookup — VIP</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #f0f2f5;
-      color: #1a1a2e;
+      background: #f5f5f5;
+      color: #1a1a1a;
       min-height: 100vh;
     }
 
     header {
-      background: #1a1a2e;
-      color: white;
-      padding: 18px 32px;
+      background: #ffffff;
+      border-bottom: 3px solid #E8000D;
+      padding: 14px 32px;
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.08);
     }
-    header h1 { font-size: 1.2rem; font-weight: 600; letter-spacing: 0.3px; }
-    header span { font-size: 0.8rem; color: #aab; margin-left: auto; }
+
+    .vip-logo {
+      height: 38px;
+      width: auto;
+      flex-shrink: 0;
+    }
+
+    .header-divider {
+      width: 1px;
+      height: 28px;
+      background: #e0e0e0;
+    }
+
+    header h1 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #1a1a1a;
+      letter-spacing: 0.3px;
+    }
+
+    header span {
+      font-size: 0.8rem;
+      color: #999;
+      margin-left: auto;
+    }
 
     .container { max-width: 1100px; margin: 32px auto; padding: 0 20px; }
 
@@ -63,13 +87,13 @@
       transition: border-color .2s, background .2s;
       position: relative;
     }
-    .upload-zone:hover { border-color: #4f6ef7; background: #f5f7ff; }
+    .upload-zone:hover { border-color: #E8000D; background: #fff5f5; }
     .upload-zone input[type="file"] {
       position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
     }
     .upload-zone .icon { font-size: 1.8rem; margin-bottom: 6px; }
     .upload-zone p { font-size: 0.85rem; color: #888; }
-    .upload-zone p strong { color: #4f6ef7; }
+    .upload-zone p strong { color: #E8000D; }
     .upload-zone.loaded { border-color: #22c55e; background: #f0fdf4; }
     .upload-zone.loaded p { color: #166534; }
 
@@ -86,7 +110,7 @@
       transition: border-color .2s;
       line-height: 1.6;
     }
-    textarea:focus { outline: none; border-color: #4f6ef7; }
+    textarea:focus { outline: none; border-color: #E8000D; }
     textarea::placeholder { color: #bbb; }
 
     .hint { font-size: 0.75rem; color: #999; margin-top: 6px; }
@@ -100,17 +124,18 @@
     }
 
     button#searchBtn {
-      background: #1a1a2e;
+      background: #E8000D;
       color: white;
       border: none;
       border-radius: 8px;
       padding: 11px 30px;
       font-size: 0.95rem;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
       transition: background .2s, transform .1s;
+      letter-spacing: 0.3px;
     }
-    button#searchBtn:hover { background: #2d2d4e; }
+    button#searchBtn:hover { background: #c40009; }
     button#searchBtn:active { transform: scale(.97); }
 
     button#clearBtn {
@@ -148,7 +173,7 @@
     }
     .results-header h2 { font-size: 0.95rem; font-weight: 600; }
     .badge {
-      background: #4f6ef7;
+      background: #E8000D;
       color: white;
       font-size: 0.75rem;
       font-weight: 700;
@@ -184,7 +209,7 @@
       border-bottom: 1px solid #f0f0f0;
       transition: background .15s;
     }
-    tbody tr:hover { background: #f8f9ff; }
+    tbody tr:hover { background: #fff5f5; }
     tbody tr:last-child { border-bottom: none; }
 
     tbody td {
@@ -195,11 +220,11 @@
     /* Column styling */
     td.rack {
       font-weight: 600;
-      color: #1a1a2e;
+      color: #1a1a1a;
     }
     td.sku {
       font-family: 'SF Mono', 'Fira Code', monospace;
-      color: #4f6ef7;
+      color: #E8000D;
       font-size: 0.85rem;
     }
     td.piv {
@@ -235,13 +260,31 @@
     /* Responsive */
     @media (max-width: 640px) {
       .controls { grid-template-columns: 1fr; }
+      header { padding: 12px 16px; }
     }
   </style>
 </head>
 <body>
 
 <header>
-  <div>📦</div>
+  <!-- VIP brand logo (inline SVG) -->
+  <svg class="vip-logo" viewBox="0 0 220 80" xmlns="http://www.w3.org/2000/svg" aria-label="VIP">
+    <!-- V -->
+    <polygon points="0,4 22,4 38,52 44,32 54,32 38,76 22,76" fill="#E8000D"/>
+    <polygon points="44,32 54,32 70,76 54,76" fill="#E8000D"/>
+    <!-- lightning cut on V -->
+    <polygon points="18,62 30,40 38,52 26,74" fill="white"/>
+    <!-- I -->
+    <rect x="78" y="4" width="20" height="72" fill="#E8000D"/>
+    <!-- P -->
+    <path d="M108,4 L108,76 L128,76 L128,52 L148,52
+             C162,52 172,42 172,28 C172,14 162,4 148,4 Z
+             M128,16 L144,16 C154,16 160,21 160,28
+             C160,35 154,40 144,40 L128,40 Z"
+          fill="#E8000D"/>
+  </svg>
+
+  <div class="header-divider"></div>
   <h1>PIV SKU Lookup</h1>
   <span id="fileLabel">No file loaded</span>
 </header>
@@ -321,7 +364,7 @@
   });
 
   // Drag & drop
-  uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.style.borderColor = '#4f6ef7'; });
+  uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.style.borderColor = '#E8000D'; });
   uploadZone.addEventListener('dragleave', () => { uploadZone.style.borderColor = ''; });
   uploadZone.addEventListener('drop', e => {
     e.preventDefault();
