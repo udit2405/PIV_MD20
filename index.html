@@ -391,11 +391,14 @@
           const row = rows[i];
           const sku = String(row[COL_SKU] ?? '').trim();
           if (!sku) continue;
-          excelData.set(sku.toUpperCase(), {
+          const key = sku.toUpperCase();
+          const entry = {
             rack: String(row[COL_RACK] ?? '').trim(),
             sku:  sku,
             piv:  String(row[COL_PIV]  ?? '').trim(),
-          });
+          };
+          if (!excelData.has(key)) excelData.set(key, []);
+          excelData.get(key).push(entry);
           rowCount++;
         }
 
@@ -445,13 +448,16 @@
     const notFound = [];
 
     unique.forEach(sku => {
-      const match = excelData.get(sku);
-      if (match) {
-        found.push(match);
+      const matches = excelData.get(sku);
+      if (matches && matches.length > 0) {
+        found.push(...matches);
       } else {
         notFound.push(sku);
       }
     });
+
+    // Sort by PIV descending (max → min)
+    found.sort((a, b) => parseFloat(b.piv) - parseFloat(a.piv));
 
     renderTable(found, notFound);
   }
