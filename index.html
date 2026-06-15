@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PIV SKU Lookup</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #1a1a2e;
+      color: white;
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    header h1 { font-size: 1.2rem; font-weight: 600; letter-spacing: 0.3px; }
+    header span { font-size: 0.8rem; color: #aab; margin-left: auto; }
+
+    .container { max-width: 1100px; margin: 32px auto; padding: 0 20px; }
+
+    /* ── Controls row ── */
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 22px 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    }
+
+    .card label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: #666;
+      margin-bottom: 10px;
+    }
+
+    /* File upload zone */
+    .upload-zone {
+      border: 2px dashed #d0d4dc;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+      position: relative;
+    }
+    .upload-zone:hover { border-color: #4f6ef7; background: #f5f7ff; }
+    .upload-zone input[type="file"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .upload-zone .icon { font-size: 1.8rem; margin-bottom: 6px; }
+    .upload-zone p { font-size: 0.85rem; color: #888; }
+    .upload-zone p strong { color: #4f6ef7; }
+    .upload-zone.loaded { border-color: #22c55e; background: #f0fdf4; }
+    .upload-zone.loaded p { color: #166534; }
+
+    /* SKU textarea */
+    textarea {
+      width: 100%;
+      height: 108px;
+      border: 1.5px solid #d0d4dc;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.9rem;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      resize: vertical;
+      transition: border-color .2s;
+      line-height: 1.6;
+    }
+    textarea:focus { outline: none; border-color: #4f6ef7; }
+    textarea::placeholder { color: #bbb; }
+
+    .hint { font-size: 0.75rem; color: #999; margin-top: 6px; }
+
+    /* Search button */
+    .search-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    button#searchBtn {
+      background: #1a1a2e;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 11px 30px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .2s, transform .1s;
+    }
+    button#searchBtn:hover { background: #2d2d4e; }
+    button#searchBtn:active { transform: scale(.97); }
+
+    button#clearBtn {
+      background: transparent;
+      border: 1.5px solid #d0d4dc;
+      border-radius: 8px;
+      padding: 11px 20px;
+      font-size: 0.9rem;
+      color: #666;
+      cursor: pointer;
+      transition: border-color .2s, color .2s;
+    }
+    button#clearBtn:hover { border-color: #999; color: #333; }
+
+    #statusMsg {
+      font-size: 0.85rem;
+      color: #666;
+      margin-left: auto;
+    }
+
+    /* ── Results table ── */
+    .results-card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      overflow: hidden;
+    }
+
+    .results-header {
+      padding: 16px 24px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .results-header h2 { font-size: 0.95rem; font-weight: 600; }
+    .badge {
+      background: #4f6ef7;
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 700;
+      border-radius: 20px;
+      padding: 3px 10px;
+    }
+    .badge.zero { background: #ef4444; }
+
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+
+    thead tr {
+      background: #f8f9fb;
+    }
+    thead th {
+      text-align: left;
+      padding: 12px 20px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: #888;
+      border-bottom: 2px solid #eee;
+      white-space: nowrap;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid #f0f0f0;
+      transition: background .15s;
+    }
+    tbody tr:hover { background: #f8f9ff; }
+    tbody tr:last-child { border-bottom: none; }
+
+    tbody td {
+      padding: 11px 20px;
+      vertical-align: middle;
+    }
+
+    /* Column styling */
+    td.rack {
+      font-weight: 600;
+      color: #1a1a2e;
+    }
+    td.sku {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      color: #4f6ef7;
+      font-size: 0.85rem;
+    }
+    td.piv {
+      font-weight: 700;
+      color: #166534;
+    }
+
+    /* Row number column */
+    td.rownum, th.rownum {
+      color: #ccc;
+      font-size: 0.75rem;
+      width: 36px;
+      text-align: right;
+      padding-right: 8px;
+    }
+
+    /* Not found badge in results */
+    .not-found-row td {
+      color: #ef4444;
+      font-style: italic;
+      background: #fff5f5;
+    }
+
+    /* Empty / placeholder states */
+    .empty-state {
+      padding: 48px 24px;
+      text-align: center;
+      color: #bbb;
+    }
+    .empty-state .big-icon { font-size: 2.5rem; margin-bottom: 10px; }
+    .empty-state p { font-size: 0.9rem; }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .controls { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>📦</div>
+  <h1>PIV SKU Lookup</h1>
+  <span id="fileLabel">No file loaded</span>
+</header>
+
+<div class="container">
+
+  <!-- Controls -->
+  <div class="controls">
+
+    <!-- Excel upload -->
+    <div class="card">
+      <label>Step 1 — Upload Excel</label>
+      <div class="upload-zone" id="uploadZone">
+        <input type="file" id="fileInput" accept=".xlsx,.xls" />
+        <div class="icon">📂</div>
+        <p>Drop your Excel here or <strong>click to browse</strong></p>
+      </div>
+    </div>
+
+    <!-- SKU input -->
+    <div class="card">
+      <label>Step 2 — Paste SKUs</label>
+      <textarea id="skuInput"
+        placeholder="Paste SKUs here — one per line, or comma / space separated&#10;&#10;e.g.&#10;ABC123&#10;XYZ456&#10;DEF789"></textarea>
+      <p class="hint">Accepts newlines, commas, or spaces between SKUs. Case-insensitive.</p>
+    </div>
+
+  </div>
+
+  <!-- Action row -->
+  <div class="search-row">
+    <button id="searchBtn">🔍 Lookup SKUs</button>
+    <button id="clearBtn">✕ Clear</button>
+    <span id="statusMsg"></span>
+  </div>
+
+  <!-- Results -->
+  <div class="results-card">
+    <div class="results-header">
+      <h2>Results</h2>
+      <span class="badge" id="countBadge" style="display:none"></span>
+    </div>
+    <div class="table-wrap">
+      <div class="empty-state" id="emptyState">
+        <div class="big-icon">📋</div>
+        <p>Upload your Excel and paste SKUs above, then click <strong>Lookup SKUs</strong></p>
+      </div>
+      <table id="resultsTable" style="display:none">
+        <thead>
+          <tr>
+            <th class="rownum">#</th>
+            <th>RACK</th>
+            <th>SKU</th>
+            <th>PIV</th>
+          </tr>
+        </thead>
+        <tbody id="resultsBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  /* ─── State ─── */
+  let excelData = null; // Map: SKU (uppercase) → { rack, sku, piv }
+
+  /* ─── File Upload ─── */
+  const fileInput  = document.getElementById('fileInput');
+  const uploadZone = document.getElementById('uploadZone');
+  const fileLabel  = document.getElementById('fileLabel');
+  const statusMsg  = document.getElementById('statusMsg');
+
+  fileInput.addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (file) loadExcel(file);
+  });
+
+  // Drag & drop
+  uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.style.borderColor = '#4f6ef7'; });
+  uploadZone.addEventListener('dragleave', () => { uploadZone.style.borderColor = ''; });
+  uploadZone.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadZone.style.borderColor = '';
+    const file = e.dataTransfer.files[0];
+    if (file) loadExcel(file);
+  });
+
+  function loadExcel(file) {
+    statusMsg.textContent = 'Reading file…';
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const wb = XLSX.read(e.target.result, { type: 'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+
+        // sheet_to_json with header:1 gives array of arrays
+        // Row 0 = headers, subsequent rows = data
+        const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+        // Col B = index 1, Col D = index 3, Col J = index 9
+        const COL_RACK = 1;
+        const COL_SKU  = 3;
+        const COL_PIV  = 9;
+
+        // Build map — skip header row (index 0)
+        excelData = new Map();
+        let rowCount = 0;
+        for (let i = 1; i < rows.length; i++) {
+          const row = rows[i];
+          const sku = String(row[COL_SKU] ?? '').trim();
+          if (!sku) continue;
+          excelData.set(sku.toUpperCase(), {
+            rack: String(row[COL_RACK] ?? '').trim(),
+            sku:  sku,
+            piv:  String(row[COL_PIV]  ?? '').trim(),
+          });
+          rowCount++;
+        }
+
+        // Update UI
+        uploadZone.classList.add('loaded');
+        uploadZone.querySelector('p').innerHTML = `✅ <strong>${file.name}</strong> — ${rowCount} SKUs loaded`;
+        fileLabel.textContent = file.name;
+        statusMsg.textContent = `${rowCount} rows indexed from "${wb.SheetNames[0]}"`;
+
+      } catch(err) {
+        statusMsg.textContent = '⚠️ Error reading file: ' + err.message;
+        console.error(err);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  /* ─── Search ─── */
+  document.getElementById('searchBtn').addEventListener('click', runSearch);
+  document.getElementById('skuInput').addEventListener('keydown', e => {
+    if (e.ctrlKey && e.key === 'Enter') runSearch();
+  });
+
+  function runSearch() {
+    if (!excelData) {
+      statusMsg.textContent = '⚠️ Please upload the Excel file first.';
+      return;
+    }
+
+    const raw = document.getElementById('skuInput').value.trim();
+    if (!raw) {
+      statusMsg.textContent = '⚠️ Please paste at least one SKU.';
+      return;
+    }
+
+    // Parse SKUs: split on newlines, commas, semicolons, spaces
+    const skus = raw
+      .split(/[\n,;\s]+/)
+      .map(s => s.trim().toUpperCase())
+      .filter(s => s.length > 0);
+
+    // Deduplicate while preserving order
+    const unique = [...new Set(skus)];
+
+    // Build results
+    const found    = [];
+    const notFound = [];
+
+    unique.forEach(sku => {
+      const match = excelData.get(sku);
+      if (match) {
+        found.push(match);
+      } else {
+        notFound.push(sku);
+      }
+    });
+
+    renderTable(found, notFound);
+  }
+
+  function renderTable(found, notFound) {
+    const tbody      = document.getElementById('resultsBody');
+    const table      = document.getElementById('resultsTable');
+    const emptyState = document.getElementById('emptyState');
+    const badge      = document.getElementById('countBadge');
+
+    tbody.innerHTML = '';
+
+    const total = found.length + notFound.length;
+
+    if (total === 0) {
+      table.style.display = 'none';
+      emptyState.style.display = 'block';
+      badge.style.display = 'none';
+      return;
+    }
+
+    // Found rows
+    found.forEach((item, i) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="rownum">${i + 1}</td>
+        <td class="rack">${esc(item.rack)}</td>
+        <td class="sku">${esc(item.sku)}</td>
+        <td class="piv">${esc(item.piv)}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    // Not-found rows (shown at bottom with warning)
+    notFound.forEach(sku => {
+      const tr = document.createElement('tr');
+      tr.className = 'not-found-row';
+      tr.innerHTML = `
+        <td class="rownum">—</td>
+        <td>—</td>
+        <td>${esc(sku)}</td>
+        <td>Not found in file</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    // Show table
+    emptyState.style.display = 'none';
+    table.style.display = 'table';
+
+    // Badge
+    badge.style.display = 'inline-block';
+    badge.textContent = `${found.length} found / ${notFound.length} not found`;
+    badge.className = 'badge' + (notFound.length > 0 && found.length === 0 ? ' zero' : '');
+
+    statusMsg.textContent = `Searched ${total} SKU${total !== 1 ? 's' : ''}`;
+  }
+
+  /* ─── Clear ─── */
+  document.getElementById('clearBtn').addEventListener('click', () => {
+    document.getElementById('skuInput').value = '';
+    document.getElementById('resultsBody').innerHTML = '';
+    document.getElementById('resultsTable').style.display = 'none';
+    document.getElementById('emptyState').style.display  = 'block';
+    document.getElementById('countBadge').style.display  = 'none';
+    statusMsg.textContent = '';
+  });
+
+  /* ─── Utility ─── */
+  function esc(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+</script>
+</body>
+</html>
