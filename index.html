@@ -335,6 +335,33 @@
     }
     .side-visit:hover{background:#E8000D;color:#fff}
     @media(max-width:1024px){.side-panel{display:none}}
+
+    /* ── Brand strip ── */
+    .brand-strip {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      background: rgba(255,255,255,0.96);
+      padding: 10px 20px;
+      border-radius: 14px;
+      box-shadow: 0 4px 16px rgba(0,0,0,.10), 0 1px 4px rgba(0,0,0,.06);
+      border: 1px solid #ebebeb;
+      backdrop-filter: blur(10px);
+      z-index: 80;
+    }
+    .brand-strip img {
+      height: 26px;
+      width: auto;
+      object-fit: contain;
+      opacity: 0.78;
+      transition: opacity .2s, transform .2s;
+      filter: grayscale(20%);
+    }
+    .brand-strip img:hover { opacity: 1; transform: scale(1.08); filter: none; }
+    @media(max-width:768px){.brand-strip{display:none}}
   </style>
 </head>
 <body>
@@ -643,6 +670,15 @@
       .replace(/>/g, '&gt;');
   }
 </script>
+
+<!-- Brand strip -->
+<div class="brand-strip">
+  <img src="https://vipindustries.co.in/storage/brands/December2022/9OxX7NVPsq2KzgGq3bzl.webp" alt="Aristocrat">
+  <img src="https://vipindustries.co.in/storage/brands/December2022/VGjRTemVx2KDgiTgPpb8.webp" alt="Alfa">
+  <img src="https://vipindustries.co.in/storage/brands/December2022/3u24WIkhsnUWZiR2FZ04.webp" alt="Caprese">
+  <img src="https://vipindustries.co.in/storage/brands/June2026/logo.webp" alt="VIP">
+  <img src="https://vipindustries.co.in/storage/brands/December2022/3QyOW93gOrVMFkjAiBV0.webp" alt="Skybags">
+</div>
 
 <!-- LEFT SIDE PANEL -->
 <div class="side-panel side-panel-left" id="sidePanelLeft">
