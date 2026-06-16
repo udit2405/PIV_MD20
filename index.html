@@ -172,6 +172,20 @@
       justify-content: space-between;
     }
     .results-header h2 { font-size: 0.95rem; font-weight: 600; }
+    #copyBtn {
+      background: transparent;
+      border: 1.5px solid #d0d4dc;
+      border-radius: 8px;
+      padding: 7px 16px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #555;
+      cursor: pointer;
+      transition: border-color .2s, color .2s, background .2s;
+      margin-left: auto;
+    }
+    #copyBtn:hover { border-color: #E8000D; color: #E8000D; background: #fff5f5; }
+    #copyBtn.copied { border-color: #22c55e; color: #166534; background: #f0fdf4; }
     .badge {
       background: #E8000D;
       color: white;
@@ -320,6 +334,7 @@
     <div class="results-header">
       <h2>Results</h2>
       <span class="badge" id="countBadge" style="display:none"></span>
+      <button id="copyBtn" style="display:none">⎘ Copy</button>
     </div>
     <div class="table-wrap">
       <div class="empty-state" id="emptyState">
@@ -508,6 +523,9 @@
     emptyState.style.display = 'none';
     table.style.display = 'table';
 
+    // Copy button
+    document.getElementById('copyBtn').style.display = 'inline-block';
+
     // Badge
     badge.style.display = 'inline-block';
     badge.textContent = `${found.length} found / ${notFound.length} not found`;
@@ -523,7 +541,25 @@
     document.getElementById('resultsTable').style.display = 'none';
     document.getElementById('emptyState').style.display  = 'block';
     document.getElementById('countBadge').style.display  = 'none';
+    document.getElementById('copyBtn').style.display     = 'none';
     statusMsg.textContent = '';
+  });
+
+  /* ─── Copy ─── */
+  document.getElementById('copyBtn').addEventListener('click', () => {
+    const rows = document.querySelectorAll('#resultsBody tr:not(.not-found-row)');
+    if (!rows.length) return;
+    const lines = ['#\tRACK\tSKU\tPIV'];
+    rows.forEach(tr => {
+      const cells = tr.querySelectorAll('td');
+      lines.push([...cells].map(td => td.textContent.trim()).join('\t'));
+    });
+    navigator.clipboard.writeText(lines.join('\n')).then(() => {
+      const btn = document.getElementById('copyBtn');
+      btn.textContent = '✓ Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = '⎘ Copy'; btn.classList.remove('copied'); }, 1800);
+    });
   });
 
   /* ─── Utility ─── */
