@@ -48,12 +48,16 @@
       pointer-events: none;
     }
     header span {
-      font-size: 0.76rem;
-      color: #b0b5c0;
+      font-size: 0.68rem;
+      color: #c0c4cc;
       margin-left: auto;
-      font-weight: 500;
+      font-weight: 400;
       letter-spacing: 0.2px;
+      text-align: right;
+      line-height: 1.6;
     }
+    header span .top-line { display: block; font-weight: 600; color: #bbbfc8; letter-spacing: 0.4px; }
+    header span .bot-line { display: block; font-style: italic; color: #cdd0d8; }
 
     /* ── Layout ── */
     .container { max-width: 1100px; margin: 28px auto; padding: 0 20px; }
@@ -443,7 +447,7 @@
 
   <div class="header-divider"></div>
   <h1>MD - 20 &nbsp;|&nbsp; Phase 1 &amp; 2 &nbsp;|&nbsp; PIV SKU Lookup</h1>
-  <span id="fileLabel">No file loaded</span>
+  <span id="fileLabel"><span class="top-line">| MD-20 &nbsp;|&nbsp; PIV — Rack Lookup |</span><span class="bot-line">Developed for Dirghraj Pant</span></span>
 </header>
 
 <div class="container">
@@ -569,7 +573,7 @@
         // Update UI
         uploadZone.classList.add('loaded');
         uploadZone.querySelector('p').innerHTML = `✅ <strong>${file.name}</strong> — ${rowCount} SKUs loaded`;
-        fileLabel.textContent = file.name;
+        // fileLabel stays as static branding text
         statusMsg.textContent = `${rowCount} rows indexed from "${wb.SheetNames[0]}"`;
 
       } catch(err) {
